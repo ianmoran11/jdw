@@ -25,12 +25,20 @@ crime_and_justice_df_01 <-
 
 crime_and_justice_df_02 <- crime_and_justice_df_01 %>% unnest(releases_df) 
 
+# Unzip zip files
+list.files("files",full.names = T) %>% keep(~ str_detect(.,"\\.zip")) %>% .[1] %>% map(unzip,exdir = "files", overwrite = T)
+
+
 crime_and_justice_df_03 <- crime_and_justice_df_02 %>% mutate(download_df = map2(release_url,row_number(), possibly(function(x,cnt){print(x); print(cnt);get_downloads(x)},NA)))
 
 crime_and_justice_df_04 <- crime_and_justice_df_03 %>% unnest(download_df, keep_empty = T) 
 
 crime_and_justice_df_04$data_link[
   crime_and_justice_df_04$data_link %>% str_extract("\\.xlsx|\\.xls|\\.zip|\\.pdf|Data Cube") %>% is.na() %>% which()]
+
+
+crime_and_justice_df_04 %>% saveRDS( .,file = "crime_and_justice_df_04.rds")
+
 
 crime_and_justice_df_05 <–
 crime_and_justice_df_04 %>%
@@ -136,3 +144,16 @@ get_downloads <- function(url){
   }
 
 }
+
+id <- function(x) {
+  x
+}
+
+list.files("files") %>% 
+tibble(filename = .) %>%
+ mutate(extension = str_extract(filename, "\\..*$")) %>%
+ mutate(filename = str_replace(filename, "\\..*$", "")) %>%
+ mutate(present = T) %>%
+ spread(extension, present) %>%
+ pull(.xlsx) %>% sum(na.rm = T)
+ id 
